@@ -104,22 +104,30 @@ def processFile(filename):
 			x1 = linearPortion[i][0]
 			y1 = linearPortion[i][1]
 
+	#for i in lossyLinearRegion:
+	#	print(i[0], i[1])
+
 	# Identify the longest linear region before the global maximum, excluding very low values
 	longestRange, longestRangeSet, longestRangeIndex = 0, [], 0
 	for i in range(0, len(lossyLinearRegion)):
-		if lossyLinearRegion[i][1][1] < 0.2 * global_max_y:
+		if lossyLinearRegion[i][1][1] < (0.2 * global_max_y):
 			continue
-		if lossyLinearRegion[i][0][1] < global_max_x:
+		if lossyLinearRegion[i][0][0] < global_max_x:
 			if (lossyLinearRegion[i][0][1] - lossyLinearRegion[i][0][0]) > longestRange:
 				longestRange = lossyLinearRegion[i][0][1] - lossyLinearRegion[i][0][0]
 				longestRangeSet = lossyLinearRegion[i].copy()
 				longestRangeIndex = i
-	del lossyLinearRegion[longestRangeIndex]
+	if longestRangeIndex:
+		del lossyLinearRegion[longestRangeIndex]
 
 	# Calculate the slope of the longest linear region
-	x1, y1, x2, y2 = longestRangeSet[0][0], longestRangeSet[1][0], longestRangeSet[0][1], longestRangeSet[1][1]
-	slope = (y2 - y1)/(x2 - x1)
-	print(filename+"\t"+str(round(slope))+"\t"+str(round(y2)))
+	slope = None
+	if longestRangeSet:
+		x1, y1, x2, y2 = longestRangeSet[0][0], longestRangeSet[1][0], longestRangeSet[0][1], longestRangeSet[1][1]
+		slope = (y2 - y1)/(x2 - x1)
+		print(filename+"\t"+str(round(slope))+"\t"+str(round(y2)))
+	else:
+		print(filename+"\t\t"+str(round(y2)))
 
 	# Plot the results
 	plt.plot(displacementSet, forceSet, label="force")
@@ -132,7 +140,8 @@ def processFile(filename):
 		else:
 			thisLabel = ""
 		plt.plot(lossyLinearRegion[i][0], lossyLinearRegion[i][1], "o-", color="purple", label=thisLabel)
-	plt.plot(longestRangeSet[0], longestRangeSet[1], "o-", color="magenta", label="Modulus: "+str(round(slope,2)))
+	if longestRangeSet:
+		plt.plot(longestRangeSet[0], longestRangeSet[1], "o-", color="magenta", label="Modulus: "+str(round(slope,2)))
 	plt.legend(loc=0)
 	plt.show()
 
