@@ -2,6 +2,7 @@
 
 import sys, getopt
 import csv
+from matplotlib import pyplot as plt
 
 def main(argv):
 	# get the filename of the data file to process
@@ -44,19 +45,49 @@ def main(argv):
 				displacement.append(float(row[1]))
 				force.append(float(row[2]))
 	
-	# Smooth data
-	# each displacement position has on average six data points
-	force = movingAverage(force.copy(), 6).copy()
+	# Smooth data: just one (average) force measurement per displacement
+	displacementSet = []
+	forceSet = []
+	for i in sorted(set(displacement)): # for each unique displacement value
+		nValues  = 0.
+		forceSum = 0.
+		for j in range(0, len(force)): # gather and average all the forces at each displacement
+			if displacement[j] == i:
+				forceSum += force[j]
+				nValues += 1
+		displacementSet.append(i)
+		forceSet.append(forceSum / nValues)
+	
+	# Can apply a moving average for further smoothing
+	#forceSet = movingAverage(forceSet.copy(), 4).copy()
 
 	# Find local minima or maxima
 	print("Displ.\tForce")
-	for i in range(2, len(force)):
-		if force[i] < 0:
-			continue # false positives in unstable region before test begins
-		deriv1 = force[i]   -  force[i-1]
-		deriv2 = force[i-1] -  force[i-2]
+	firstDerivatives = [0, 0]
+	secondDerivative = 0
+	secondDerivatives = [[], []]
+	minMaxPoints = [[], []]
+	for i in range(2, len(forceSet)):
+		if forceSet[i] < 0.5: # false positives in unstable region before test begins
+			firstDerivatives.append(0)
+			continue 
+		deriv1 = forceSet[i]   -  forceSet[i-1]
+		deriv2 = forceSet[i-1] -  forceSet[i-2]
+		secondDerivative = deriv1 - deriv2
+		firstDerivatives.append(deriv2)
+		secondDerivatives[0].append(displacementSet[i-1])
+		secondDerivatives[1].append(secondDerivative)
 		if (deriv1 * deriv2) < 0:
-			print(displacement[i], force[i])
+			print(displacementSet[i-1], forceSet[i-1])
+			minMaxPoints[0].append(displacementSet[i-1])
+			minMaxPoints[1].append(forceSet[i-1])
+
+	plt.plot(displacementSet, forceSet, label="force")
+	plt.plot(displacementSet, firstDerivatives, label="first derivative")
+	plt.plot(secondDerivatives[0], secondDerivatives[1], label="second derivative")
+	plt.plot(minMaxPoints[0], minMaxPoints[1], "o", label="local minima and maxima")
+	plt.legend(loc=0)
+	plt.show()
 
 # Simple moving average, https://www.quora.com/How-do-I-perform-moving-average-in-Python
 def movingAverage(l, N):
