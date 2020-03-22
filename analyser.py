@@ -65,7 +65,7 @@ def main(argv):
 	print("Displ.\tForce")
 	firstDerivatives = [0, 0]
 	secondDerivative = 0
-	secondDerivatives = [[], []]
+	secondDerivatives = [[], [], [], []] # displacement, second derivative, displacement range, force range
 	minMaxPoints = [[], []]
 	for i in range(2, len(forceSet)):
 		if forceSet[i] < 0.5: # false positives in unstable region before test begins
@@ -77,15 +77,32 @@ def main(argv):
 		firstDerivatives.append(deriv2)
 		secondDerivatives[0].append(displacementSet[i-1])
 		secondDerivatives[1].append(secondDerivative)
+		secondDerivatives[2].append([ displacementSet[i-2], displacementSet[i] ])
+		secondDerivatives[3].append([ forceSet[i-2], forceSet[i] ])
 		if (deriv1 * deriv2) < 0:
 			print(displacementSet[i-1], forceSet[i-1])
 			minMaxPoints[0].append(displacementSet[i-1])
 			minMaxPoints[1].append(forceSet[i-1])
 
+	# Find linear regions (i.e. find regions where the second derivative is within
+	# some threshold range from zero)
+	threshold = 1.5
+	linearPortion = []
+	for i in range(0, len(secondDerivatives[0])):
+		if abs(secondDerivatives[1][i]) < threshold:
+			x1 = secondDerivatives[2][i][0]
+			y1 = secondDerivatives[3][i][0]
+			x2 = secondDerivatives[2][i][1]
+			y2 = secondDerivatives[3][i][1]
+			linearPortion.append([[x1, x2], [y1, y2]])
+
+	# Plot the results
 	plt.plot(displacementSet, forceSet, label="force")
 	plt.plot(displacementSet, firstDerivatives, label="first derivative")
 	plt.plot(secondDerivatives[0], secondDerivatives[1], label="second derivative")
 	plt.plot(minMaxPoints[0], minMaxPoints[1], "o", label="local minima and maxima")
+	for i in linearPortion:
+		plt.plot(i[0], i[1], "o-", color="purple", label="")
 	plt.legend(loc=0)
 	plt.show()
 
