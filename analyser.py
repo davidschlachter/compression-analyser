@@ -62,6 +62,7 @@ def main(argv):
 	#forceSet = movingAverage(forceSet.copy(), 4).copy()
 
 	# Find local minima or maxima
+	print("# Local minima and maxima")
 	print("Displ.\tForce")
 	firstDerivatives = [0, 0]
 	secondDerivative = 0
@@ -95,6 +96,12 @@ def main(argv):
 			x2 = secondDerivatives[2][i][1]
 			y2 = secondDerivatives[3][i][1]
 			linearPortion.append([[x1, x2], [y1, y2]])
+	
+	# Find the longest linear region before the global maximum
+	global_max_y = max(forceSet)
+	global_max_x = displacementSet[forceSet.index(global_max_y)]
+	print("\n# Global max:\n" + str(global_max_x) + "\t" + str(global_max_y))
+	
 
 	# Plot the results
 	plt.plot(displacementSet, forceSet, label="force")
